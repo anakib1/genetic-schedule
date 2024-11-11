@@ -4,6 +4,7 @@ import copy
 from pretty_print import *
 
 NUM_SLOTS = 20
+WEEKS = 14
 POPULATION_SIZE = 100
 GENERATIONS = 500
 
@@ -38,8 +39,8 @@ class Schedule:
 
         for subject_name, subject in subjects.items():
             required_hours = subject.total_hours
-            taught_hours = subject_hours.get(subject_name, 0)
-            penalty += abs(required_hours - taught_hours)
+            taught_hours = subject_hours.get(subject_name, 0) * WEEKS
+            penalty += abs(required_hours - taught_hours) ** 4
 
         self.fitness = penalty
 
@@ -87,36 +88,49 @@ def get_group_size(group_name, groups):
 
 
 def initial_population(groups, lecturers, rooms, subjects):
+    # First, generate all class instances that need to be scheduled
     original_class_instances = generate_class_instances(groups, subjects)
 
     population = []
     for _ in range(POPULATION_SIZE):
+        # Deep copy of class instances for this individual
         class_instances = copy.deepcopy(original_class_instances)
         schedule = Schedule()
+        scheduled_class_instances = []
 
+        # Assign lecturers and rooms to class instances
         for cls in class_instances:
+            # Find lecturers who can teach this subject and class type
             possible_lecturers = [
                 lec for lec in lecturers
                 if cls.subject_name in lec.subjects_can_teach and cls.class_type in lec.subjects_can_teach[
                     cls.subject_name]
             ]
             if not possible_lecturers:
-                continue
+                continue  # Cannot schedule this class
             cls.lecturer = random.choice(possible_lecturers).name
 
+            # Find rooms that can accommodate the group(s)
             total_students = sum([get_group_size(group_name, groups) for group_name in cls.groups])
             possible_rooms = [room for room in rooms if room.capacity >= total_students]
             if not possible_rooms:
-                continue
+                continue  # Cannot schedule this class
             cls.room = random.choice(possible_rooms).name
 
+            # Add to scheduled class instances
+            scheduled_class_instances.append(cls)
+
+        # Now, assign class instances to slots
+        # Initialize availability dictionaries
         slots = [[] for _ in range(NUM_SLOTS)]
         group_availability = defaultdict(lambda: set(range(NUM_SLOTS)))
         lecturer_availability = defaultdict(lambda: set(range(NUM_SLOTS)))
         room_availability = defaultdict(lambda: set(range(NUM_SLOTS)))
 
-        random.shuffle(class_instances)
-        for cls in class_instances:
+        # Shuffle class instances to randomize scheduling
+        random.shuffle(scheduled_class_instances)
+        for cls in scheduled_class_instances:
+            # Find slots where groups, lecturer, and room are all available
             available_slots = set(range(NUM_SLOTS))
             for group_name in cls.groups:
                 available_slots &= group_availability[group_name]
@@ -126,13 +140,15 @@ def initial_population(groups, lecturers, rooms, subjects):
                 slot = random.choice(list(available_slots))
                 cls.slot = slot
                 slots[slot].append(cls)
+                # Update availabilities
                 for group_name in cls.groups:
                     group_availability[group_name].remove(slot)
                 lecturer_availability[cls.lecturer].remove(slot)
                 room_availability[cls.room].remove(slot)
             else:
-                continue
+                continue  # Cannot schedule this class due to availability constraints
 
+        # Assign slots to schedule
         for slot_index, slot_classes in enumerate(slots):
             schedule.slots[slot_index] = [
                 {
@@ -186,3 +202,4 @@ if __name__ == "__main__":
     best_schedule = genetic_algorithm(groups, lecturers, rooms, subjects)
 
     export_schedule_to_excel(best_schedule, groups, filename='schedule.xlsx')
+    print_subject_hours_report(best_schedule, groups, subjects)
