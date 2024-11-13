@@ -2,14 +2,14 @@ class Group:
     def __init__(self, name, num_students, subjects, subgroups):
         self.name = name
         self.num_students = num_students
-        self.subjects = subjects  # List of subject names
-        self.subgroups = subgroups  # List of subgroup names
+        self.subjects = subjects
+        self.subgroups = subgroups
 
 
 class Lecturer:
     def __init__(self, name, subjects_can_teach):
         self.name = name
-        self.subjects_can_teach = subjects_can_teach  # Dict of subject: [types of classes]
+        self.subjects_can_teach = subjects_can_teach
 
 
 class Room:
@@ -24,18 +24,17 @@ class Subject:
         self.total_hours = total_hours
         self.lecture_hours = lecture_hours
         self.practical_hours = practical_hours
-        self.needs_subgroup = needs_subgroup  # Boolean
+        self.needs_subgroup = needs_subgroup
 
 
-# Define the class for individual classes in the schedule
 class ClassInstance:
     def __init__(self, groups, subject_name, class_type):
-        self.groups = groups  # List of group or subgroup names
+        self.groups = groups
         self.subject_name = subject_name
-        self.class_type = class_type  # 'lecture' or 'practical'
+        self.class_type = class_type
         self.lecturer = None
         self.room = None
-        self.slot = None  # To be assigned during scheduling
+        self.slot = None
 
     def __str__(self):
         return f'{self.groups} {self.subject_name} {self.class_type} {self.lecturer} {self.room} {self.slot}'
