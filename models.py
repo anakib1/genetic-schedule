@@ -1,4 +1,3 @@
-
 class Group:
     def __init__(self, name, num_students, subjects, subgroups):
         self.name = name
@@ -38,3 +37,5 @@ class ClassInstance:
         self.room = None
         self.slot = None  # To be assigned during scheduling
 
+    def __str__(self):
+        return f'{self.groups} {self.subject_name} {self.class_type} {self.lecturer} {self.room} {self.slot}'

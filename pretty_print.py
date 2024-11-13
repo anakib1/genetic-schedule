@@ -7,6 +7,7 @@ from models import *
 NUM_SLOTS = 20  # 4 periods per day, 5 days a week
 WEEKS = 14
 
+
 def load_groups(filename):
     groups = []
     with open(filename, newline='', encoding='UTF-8') as csvfile:
